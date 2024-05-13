@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- head definitions go here -->
+    </head>
+    <body>
+
+        <h1> IRAC Group 28 </h1>
+        <p> Almudena Calatrava Moreno, Roberto Chamorro Martinez, Alejandro Guaita Jimenez </p>
+
+        <video class="dashjs-player" width="1280" autoplay controls preload="auto">
+            <source src="https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd" type="application/dash+xml"/>
+        </video>
+
+        <script src="dash.all.min.js"></script>
+
+        <script>
+                var player;
+                document.addEventListener("DOMContentLoaded", function () {
+                        init();
+                });
+
+                function init(){
+                        player = dashjs.MediaPlayerFactory.create( document.querySelector(".dashjs-player"));
+                };
+        </script>
+    </body>
+</html>

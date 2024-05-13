@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- head definitions go here -->
+    </head>
+    <body>
+
+        <h1> IRAC Group 28 </h1>
+        <p> Almudena Calatrava Moreno, Roberto Chamorro Martinez, Alejandro Guaita Jimenez </p>
+
+	<div class="code">
+		<video class="dashjs-player" autoplay controls preload="auto" muted>
+		</video>
+	</div>
+	<div class="code">
+		<p>Video Bitrate: <span id="bitrate"></span> </p>
+		<p>Video Buffer: <span id="buffer"></span> </p>
+		<p>Video Representation: <span id="representation"></span></p>
+	</div>
+
+	<div>
+		<canvas id="myChart"></canvas>
+	</div>
+
+        <script src="dash.all.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+		document.addEventListener("DOMContentLoaded", function () {
+		init();
+		});
+
+		const protData = {
+			"org.w3.clearkey": {
+				"clearkeys": {
+					"oW5AK5BW43HzbTSKpiu3SQ": "hyN9IKGfWKdAwFaE5pm0qg"
+				}
+			}
+		};
+
+		function init(){
+
+			const ctx = document.getElementById('myChart');
+
+			const labels = [];
+
+			const data = { 
+				labels: labels,
+				datasets: [
+					{
+						label: 'Bitrate [kbps]',
+						data: [],
+						fill: true,
+						borderColor: 'rgb(75, 192, 192)',
+						tension: 0.1,
+						yAxisID: 'left-y-axis'
+					},
+					{
+						label: 'Buffer level [secs]',
+						data: [],
+						fill: true,
+						borderColor: 'rgb(192, 10, 192)',
+						tension: 0.1,
+						yAxisID: 'right-y-axis'
+					}
+				]
+			};
+
+			const mydashchart = new Chart(ctx, {
+				type: 'line',
+				data: data,
+				options: {
+					scales: {
+						'left-y-axis': {
+							type: 'linear',
+							position: 'left'
+						},
+						'right-y-axis': {
+							type: 'linear',
+							position: 'right'
+						}
+					}
+				}
+			});
+
+			function addData(chart, newDataBitrate, newDataBuffer) {
+				const d = new Date();
+				let hour = d.getTime();
+				
+				chart.data.labels.push(d.getHours()+":"+d.getMinutes()+":"+d.getSeconds());
+				chart.data.datasets[0].data.push(newDataBitrate);
+				chart.data.datasets[1].data.push(newDataBuffer);
+				chart.update();
+			}
+
+			var video, player, mpd_url = "./output/stream.mpd";
+
+			video = document.querySelector("video");
+			player = dashjs.MediaPlayer().create();
+			player.setProtectionData(protData);
+			player.initialize(video, mpd_url, true);
+			player.on(dashjs.MediaPlayer.events["PLAYBACK_ENDED"], function() {
+				clearInterval(eventPoller);
+			});
+
+			var eventPoller = setInterval(function() {
+				var streamInfo = player.getActiveStream().getStreamInfo();
+				var dashMetrics = player.getDashMetrics();
+				var dashAdapter = player.getDashAdapter();
+				if (dashMetrics && streamInfo) {
+					const periodIdx = streamInfo.index;
+					var repSwitch = dashMetrics.getCurrentRepresentationSwitch('video', true);
+					var bufferLevel = dashMetrics.getCurrentBufferLevel('video', true);
+					var bitrate = repSwitch ? Math.round(dashAdapter.  getBandwidthForRepresentation(repSwitch.to, periodIdx) / 1000) : NaN;
+					document.getElementById('buffer').innerText = bufferLevel + " secs";
+					document.getElementById('bitrate').innerText = bitrate + " Kbps";
+					document.getElementById('representation').innerText = repSwitch.to;
+
+					addData(mydashchart, bitrate, bufferLevel);
+				}
+			}, 500);
+		}
+
+		
+
+        </script>
+    </body>
+</html>
